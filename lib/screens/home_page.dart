@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -11,14 +12,21 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool _isDailySelected = true;
   int _waterCount = 0;
+  String _todayKey = _getTodayKey();
+
   final List<Map<String, dynamic>> _dailyTasks = [
     {'task': 'Eat 3 meals', 'icon': Icons.restaurant, 'completed': false},
     {'task': 'Meditate for 5 min', 'icon': Icons.self_improvement, 'completed': false},
-    {'task': 'Evening Skincare', 'icon': Icons.spa, 'completed': false},
+    {'task': 'Skincare', 'icon': Icons.spa, 'completed': false},
     {'task': 'Read a book', 'icon': Icons.menu_book, 'completed': false},
     {'task': 'Exercise for 30 min', 'icon': Icons.directions_run, 'completed': false},
     {'task': 'Sleep by 11pm', 'icon': Icons.nights_stay, 'completed': false},
   ];
+
+  static String _getTodayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month}-${now.day}'; // Format: YYYY-MM-DD
+  }
 
   @override
   void initState() {
@@ -28,17 +36,26 @@ class _HomePageState extends State<HomePage> {
 
   void _loadWaterCount() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedData = prefs.getString('waterIntake') ?? '{}';
+    final waterData = json.decode(savedData) as Map<String, dynamic>;
+
     setState(() {
-      _waterCount = prefs.getInt('waterCount') ?? 0;
+      _waterCount = waterData[_todayKey]?.toInt() ?? 0;
     });
   }
 
   void _updateWaterCount(int count) async {
     final prefs = await SharedPreferences.getInstance();
+    final savedData = prefs.getString('waterIntake') ?? '{}';
+    final waterData = json.decode(savedData) as Map<String, dynamic>;
+
+    waterData[_todayKey] = count.clamp(0, 8); // Ensure value stays between 0 and 8
+
     setState(() {
-      _waterCount = count.clamp(0, 8);
-      prefs.setInt('waterCount', _waterCount);
+      _waterCount = waterData[_todayKey];
     });
+
+    await prefs.setString('waterIntake', json.encode(waterData));
   }
 
   @override

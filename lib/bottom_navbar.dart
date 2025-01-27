@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentalwellness/screens/goals_hub_page.dart';
 import 'package:mentalwellness/screens/home_page.dart';
 
 class FloatingNavBarHome extends StatefulWidget {
@@ -11,7 +12,7 @@ class _FloatingNavBarHomeState extends State<FloatingNavBarHome> {
 
   // List of widgets to display for each navigation item
   final List<Widget> _pages = [
-    const Center(child: Text('Goals Page', style: TextStyle(fontSize: 24))),
+    const GoalsHubPage(),
     const HomePage(), // Your existing HomePage
     const Center(child: Text('Tasks Page', style: TextStyle(fontSize: 24))),
     const Center(child: Text('Friends Page', style: TextStyle(fontSize: 24))),
