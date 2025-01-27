@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mentalwellness/bottom_navbar.dart';
+import 'package:mentalwellness/screens/baselogin.dart';
 import 'package:mentalwellness/screens/home_page.dart';
 
 void main() {
@@ -14,7 +15,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.purple,
       ),
-      home: FloatingNavBarHome(), // Replace HomePage with FloatingNavBarHome
+      home: LoginSignupPage(), // Replace HomePage with FloatingNavBarHome
     );
   }
 }
