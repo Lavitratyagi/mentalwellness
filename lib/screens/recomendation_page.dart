@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart'; // Make sure to import your HomePage here.
+import 'package:mentalwellness/bottom_navbar.dart';
 
 class RecommendationsPage extends StatelessWidget {
   @override
@@ -108,7 +108,7 @@ class RecommendationsPage extends StatelessWidget {
                           context,
                           MaterialPageRoute(
                             builder: (context) =>
-                                HomePage(), // Replace with your actual home page
+                                FloatingNavBarHome(), // Replace with your actual home page
                           ),
                         );
                       },

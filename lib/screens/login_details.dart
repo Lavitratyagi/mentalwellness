@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mentalwellness/screens/home_page.dart';
+import 'package:mentalwellness/bottom_navbar.dart';
 import 'gender_selection_page.dart'; // Import the GenderSelectionPage
 
 class UsernamePasswordPage extends StatefulWidget {
@@ -57,7 +57,7 @@ class _UsernamePasswordPageState extends State<UsernamePasswordPage> {
         context,
         MaterialPageRoute(
             builder: (context) =>
-                HomePage()), // Replace with your homepage widget
+                FloatingNavBarHome()), // Replace with your homepage widget
       );
     } else {
       _showMessage("Invalid credentials.");

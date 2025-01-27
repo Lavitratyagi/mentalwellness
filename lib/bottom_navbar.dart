@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mentalwellness/screens/goals_hub_page.dart';
 import 'package:mentalwellness/screens/home_page.dart';
+import 'package:mentalwellness/screens/safe_space.dart';
 
 class FloatingNavBarHome extends StatefulWidget {
   @override
@@ -15,7 +16,7 @@ class _FloatingNavBarHomeState extends State<FloatingNavBarHome> {
     const GoalsHubPage(),
     const HomePage(), // Your existing HomePage
     const Center(child: Text('Tasks Page', style: TextStyle(fontSize: 24))),
-    const Center(child: Text('Friends Page', style: TextStyle(fontSize: 24))),
+    const SafeSpacePage(),
   ];
 
   void _onItemTapped(int index) {
