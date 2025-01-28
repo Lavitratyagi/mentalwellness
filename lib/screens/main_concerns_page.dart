@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Add this import
 import 'package:mentalwellness/screens/recomendation_page.dart';
 import 'package:mentalwellness/services/api_services.dart';
 
@@ -18,12 +19,19 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
     _fetchConcerns();
   }
 
-  // Fetch concerns from the backend
   Future<void> _fetchConcerns() async {
     try {
       final concerns = await ApiService.fetchConcerns();
+      final prefs = await SharedPreferences.getInstance();
+      final savedConcerns = prefs.getStringList('selectedConcerns') ?? [];
+      
       setState(() {
         _concerns = concerns;
+        // Filter and limit to 3 valid concerns
+        _selectedConcerns = savedConcerns
+            .where((c) => _concerns.contains(c))
+            .take(3)
+            .toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -34,6 +42,12 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
     }
   }
 
+  // Add this new method to save concerns
+  Future<void> _saveSelectedConcerns() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('selectedConcerns', _selectedConcerns);
+  }
+
   void _nextPage() async {
     if (_selectedConcerns.isEmpty) {
       _showMessage("Please select at least one concern.");
@@ -42,6 +56,7 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
 
     try {
       final goals = await ApiService.fetchGoals(_selectedConcerns);
+      await _saveSelectedConcerns(); // Save before navigation
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -116,6 +131,7 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
                                     _showMessage("You can select up to 3 concerns only.");
                                   }
                                 });
+                                _saveSelectedConcerns(); // Save after each change
                               },
                               child: Container(
                                 padding: EdgeInsets.symmetric(

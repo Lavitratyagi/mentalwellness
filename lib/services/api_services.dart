@@ -25,4 +25,18 @@ class ApiService {
       throw Exception("Failed to fetch goals");
     }
   }
+
+  static Future<List<String>> getQuestions(List<String> concerns) async {
+    final String concernParams = concerns.join('+');
+    final response = await http.get(
+      Uri.parse('$_baseUrl/questions/$concernParams'),
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.cast<String>();
+    } else {
+      throw Exception('Failed to load questions');
+    }
+  }
 }

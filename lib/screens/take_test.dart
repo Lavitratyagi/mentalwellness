@@ -1,133 +1,225 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mentalwellness/services/api_services.dart';
 
-class TakeTestPage extends StatelessWidget {
-  const TakeTestPage({super.key});
+class TakeTestPage extends StatefulWidget {
+  @override
+  _TakeTestPageState createState() => _TakeTestPageState();
+}
+
+class _TakeTestPageState extends State<TakeTestPage> {
+  List<String> _questions = [];
+  Map<int, double> _answers = {};
+  bool _isLoading = true;
+  String _errorMessage = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchQuestions();
+  }
+
+  Future<void> _fetchQuestions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final concerns = prefs.getStringList('selectedConcerns') ?? [];
+      
+      if (concerns.isEmpty) {
+        setState(() {
+          _errorMessage = 'No concerns selected. Please complete previous steps.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final questions = await ApiService.getQuestions(concerns);
+      setState(() {
+        _questions = questions;
+        _isLoading = false;
+        // Initialize answers with 0 values
+        _answers = {for (var i = 0; i < _questions.length; i++) i: 0.0};
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Failed to load questions. Please try again.';
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _submitAnswers() {
+    // Process answers and tags
+    final List<Map<String, dynamic>> formattedAnswers = [];
+    
+    for (int i = 0; i < _questions.length; i++) {
+      final question = _questions[i];
+      final match = RegExp(r'\[(.*?)\]').firstMatch(question);
+      final tag = match?.group(1) ?? 'general';
+      final questionText = question.replaceAll(RegExp(r'\[.*?\]\s*'), '');
+
+      formattedAnswers.add({
+        'tag': tag,
+        'question': questionText,
+        'score': _answers[i]?.toInt() ?? 0,
+      });
+    }
+
+    // TODO: Send formattedAnswers to backend
+    print('Submitting answers: $formattedAnswers');
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReportPage(answers: formattedAnswers),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xFF8C7CE3), // Purple color for the AppBar
-        title: Text(
-          "TEST",
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
+        title: Text('GENTLE CHECK-IN', 
+          style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Text "TEST" at the top
-            Text(
-              "TEST",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 30),
-
-            // First Tile
-            InkWell(
-              onTap: () {
-                // Handle tile click for Test 1
-              },
-              child: Container(
-                margin: EdgeInsets.only(bottom: 16),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    // Circular Logo Image
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage(
-                          'assets/images/logo1.png'), // Replace with your logo image
-                    ),
-                    SizedBox(width: 16),
-                    // Text next to the logo
-                    Text(
-                      "Test 1",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : SingleChildScrollView(
+                  padding: EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Instructions Block
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('INSTRUCTIONS',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                )),
+                            SizedBox(height: 10),
+                            Text(
+                              '1. Using the 0-3 scale below, please indicate how you feel about the particular condition or experience.\n'
+                              '2. Please answer according to what really reflects your experience rather than what you think your experience should be.\n'
+                              '3. Please treat each item separately from every other item.',
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+                      SizedBox(height: 20),
 
-            // Second Tile
-            InkWell(
-              onTap: () {
-                // Handle tile click for Test 2
-              },
-              child: Container(
-                margin: EdgeInsets.only(bottom: 30),
-                padding: EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.withOpacity(0.3)),
-                ),
-                child: Row(
-                  children: [
-                    // Circular Logo Image
-                    CircleAvatar(
-                      radius: 30,
-                      backgroundImage: AssetImage(
-                          'assets/images/logo2.png'), // Replace with your logo image
-                    ),
-                    SizedBox(width: 16),
-                    // Text next to the logo
-                    Text(
-                      "Test 2",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
+                      // Questions List
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: _questions.length,
+                        itemBuilder: (context, index) {
+                          final question = _questions[index];
+                          final displayQuestion = question.replaceAll(
+                            RegExp(r'\[.*?\]\s*'), 
+                            ''
+                          );
+
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(displayQuestion,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w500,
+                                      )),
+                                  SizedBox(height: 10),
+                                  Slider.adaptive(
+                                    value: _answers[index] ?? 0.0,
+                                    min: 0,
+                                    max: 3,
+                                    divisions: 3,
+                                    label: _answers[index]?.toStringAsFixed(0),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _answers[index] = value;
+                                      });
+                                    },
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: 
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [0, 1, 2, 3]
+                                        .map((e) => Text(e.toString()))
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // Download Report Button
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // Handle download report functionality
-                },
-                style: ElevatedButton.styleFrom(
-                  foregroundColor: Colors.black,
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                      SizedBox(height: 20),
+                      Center(
+                        child: ElevatedButton(
+                          onPressed: _submitAnswers,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xff8C7CE3),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 15),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: Text(
+                            'Generate Report',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                  side: BorderSide(color: Colors.black),
                 ),
-                icon: Icon(Icons.download, size: 20), // Icon for download
-                label: Text(
-                  "DOWNLOAD REPORT",
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
-          ],
-        ),
+    );
+  }
+}
+
+// Dummy Report Page - You'll need to implement this
+class ReportPage extends StatelessWidget {
+  final List<Map<String, dynamic>> answers;
+
+  const ReportPage({required this.answers});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Your Report')),
+      body: ListView.builder(
+        itemCount: answers.length,
+        itemBuilder: (context, index) {
+          final answer = answers[index];
+          return ListTile(
+            title: Text(answer['question']),
+            subtitle: Text('Tag: ${answer['tag']} - Score: ${answer['score']}'),
+          );
+        },
       ),
     );
   }
