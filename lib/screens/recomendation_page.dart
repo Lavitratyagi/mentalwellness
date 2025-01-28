@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:mentalwellness/bottom_navbar.dart';
 
 class RecommendationsPage extends StatelessWidget {
+  final List<String> goals;
+
+  const RecommendationsPage({Key? key, required this.goals}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,10 +40,10 @@ class RecommendationsPage extends StatelessWidget {
                   ),
                   SizedBox(height: 30),
 
-                  // Recommendation containers
+                  // Dynamic recommendation containers
                   Column(
-                    children: [
-                      Container(
+                    children: goals.map((goal) {
+                      return Container(
                         width: 130,
                         padding: EdgeInsets.all(15),
                         margin: EdgeInsets.only(bottom: 15),
@@ -48,48 +52,15 @@ class RecommendationsPage extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
-                          "Mindfulness",
+                          goal,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.black,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                      ),
-                      Container(
-                        width: 130,
-                        padding: EdgeInsets.all(15),
-                        margin: EdgeInsets.only(bottom: 15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          "Healthy Diet",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Container(
-                        width: 130,
-                        padding: EdgeInsets.all(15),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          "Skincare",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
 
                   SizedBox(height: 30),
