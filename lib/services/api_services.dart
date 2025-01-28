@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String _baseUrl = "http://192.168.93.212:8000";
+  static const String _baseUrl = "http://192.168.50.212:8000";
 
   // Fetch concerns
   static Future<List<String>> fetchConcerns() async {

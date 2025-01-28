@@ -1,10 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'package:mentalwellness/bottom_navbar.dart';
 
 class RecommendationsPage extends StatelessWidget {
   final List<String> goals;
 
   const RecommendationsPage({Key? key, required this.goals}) : super(key: key);
+
+  // Save goals to SharedPreferences in the required format
+  Future<void> saveGoalsToLocalStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Convert goals to the required format
+    List<Map<String, dynamic>> dailyTasks = goals
+        .map((goal) => {'task': goal, 'completed': false})
+        .toList();
+
+    // Save the formatted list as a JSON string
+    await prefs.setString('dailyTasks', json.encode(dailyTasks));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +30,7 @@ class RecommendationsPage extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/images/bg.png"), // Use your background image here
+                image: AssetImage("assets/images/bg.png"),
                 fit: BoxFit.cover,
               ),
             ),
@@ -29,18 +44,13 @@ class RecommendationsPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Text for recommendations
                   Text(
                     "Based on your concerns, we recommend these goals:",
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 24, color: Colors.white),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 30),
 
-                  // Dynamic recommendation containers
                   Column(
                     children: goals.map((goal) {
                       return Container(
@@ -53,30 +63,25 @@ class RecommendationsPage extends StatelessWidget {
                         ),
                         child: Text(
                           goal,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black,
-                          ),
+                          style: TextStyle(fontSize: 16, color: Colors.black),
                           textAlign: TextAlign.center,
                         ),
                       );
                     }).toList(),
                   ),
-
                   SizedBox(height: 30),
 
                   // Row for Previous and OK buttons
                   Row(
                     children: [
-                      // Previous Button
                       Expanded(
                         child: ElevatedButton(
                           onPressed: () {
-                            Navigator.pop(context); // This will go back to MainConcernsPage
+                            Navigator.pop(context);
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(vertical: 15),
-                            backgroundColor: Colors.white, // White background
+                            backgroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
@@ -85,31 +90,29 @@ class RecommendationsPage extends StatelessWidget {
                             "PREVIOUS",
                             style: TextStyle(
                               fontSize: 16,
-                              color: Color(0xff8C7CE3), // Purple text color
+                              color: Color(0xff8C7CE3),
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
+                      SizedBox(width: 15),
 
-                      SizedBox(width: 15), // Space between buttons
-
-                      // OK Button
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: () {
-                            // Navigate to the home page when "OK" is pressed
+                          onPressed: () async {
+                            await saveGoalsToLocalStorage();
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    FloatingNavBarHome(), // Replace with your actual home page
+                                    FloatingNavBarHome(), // Navigate to home
                               ),
                             );
                           },
                           style: ElevatedButton.styleFrom(
                             padding: EdgeInsets.symmetric(vertical: 15),
-                            backgroundColor: Color(0xff8C7CE3), // Purple color
+                            backgroundColor: Color(0xff8C7CE3),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
