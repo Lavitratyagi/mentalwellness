@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentalwellness/screens/chat_companion_page.dart';
 
 class SafeSpacePage extends StatefulWidget {
   const SafeSpacePage({super.key});
@@ -41,7 +42,10 @@ class _SafeSpacePage extends State<SafeSpacePage> {
                 height: buttonHeight, // Set the height of the button
                 child: ElevatedButton(
                   onPressed: () {
-                    // Action for the first button
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ChatWithCompanionPage()),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFFD9D2FF), // Light purple color
