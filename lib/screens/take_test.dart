@@ -1,5 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mentalwellness/services/api_services.dart';
 
 class TakeTestPage extends StatefulWidget {
@@ -12,6 +14,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
   Map<int, double> _answers = {};
   bool _isLoading = true;
   String _errorMessage = '';
+  Map<String, String> _emotionResponses = {}; // Store API responses for each question
 
   @override
   void initState() {
@@ -23,7 +26,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final concerns = prefs.getStringList('selectedConcerns') ?? [];
-      
+
       if (concerns.isEmpty) {
         setState(() {
           _errorMessage = 'No concerns selected. Please complete previous steps.';
@@ -47,10 +50,53 @@ class _TakeTestPageState extends State<TakeTestPage> {
     }
   }
 
+  // Function to capture a photo using the front camera
+  Future<File?> _captureImage() async {
+    final picker = ImagePicker();
+    try {
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.camera,
+        preferredCameraDevice: CameraDevice.front, // Use the front camera
+      );
+
+      if (pickedFile != null) {
+        return File(pickedFile.path);
+      } else {
+        print('No image captured.');
+        return null;
+      }
+    } catch (e) {
+      print('Error capturing image: $e');
+      return null;
+    }
+  }
+
+  // Function to handle slider value changes
+  void _handleSliderChange(int questionIndex, double value) async {
+    setState(() {
+      _answers[questionIndex] = value;
+    });
+
+    // Automatically capture an image when the slider value changes
+    final imageFile = await _captureImage();
+    if (imageFile != null) {
+      try {
+        // Send the image to the backend
+        final response = await ApiService.uploadImage(imageFile);
+        setState(() {
+          _emotionResponses[_questions[questionIndex]] = response.toString();
+        });
+        print('API Response: $response');
+      } catch (e) {
+        print('Error sending image to backend: $e');
+      }
+    }
+  }
+
   void _submitAnswers() {
     // Process answers and tags
     final List<Map<String, dynamic>> formattedAnswers = [];
-    
+
     for (int i = 0; i < _questions.length; i++) {
       final question = _questions[i];
       final match = RegExp(r'\[(.*?)\]').firstMatch(question);
@@ -61,6 +107,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
         'tag': tag,
         'question': questionText,
         'score': _answers[i]?.toInt() ?? 0,
+        'emotionResponse': _emotionResponses[question] ?? 'Not Available',
       });
     }
 
@@ -78,8 +125,8 @@ class _TakeTestPageState extends State<TakeTestPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('GENTLE CHECK-IN', 
-          style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('GENTLE CHECK-IN',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -130,9 +177,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
                         itemBuilder: (context, index) {
                           final question = _questions[index];
                           final displayQuestion = question.replaceAll(
-                            RegExp(r'\[.*?\]\s*'), 
-                            ''
-                          );
+                              RegExp(r'\[.*?\]\s*'), '');
 
                           return Card(
                             margin: EdgeInsets.symmetric(vertical: 8),
@@ -153,14 +198,11 @@ class _TakeTestPageState extends State<TakeTestPage> {
                                     max: 3,
                                     divisions: 3,
                                     label: _answers[index]?.toStringAsFixed(0),
-                                    onChanged: (value) {
-                                      setState(() {
-                                        _answers[index] = value;
-                                      });
-                                    },
+                                    onChanged: (value) =>
+                                        _handleSliderChange(index, value),
                                   ),
                                   Row(
-                                    mainAxisAlignment: 
+                                    mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [0, 1, 2, 3]
                                         .map((e) => Text(e.toString()))
@@ -201,7 +243,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
   }
 }
 
-// Dummy Report Page - You'll need to implement this
+// Dummy Report Page
 class ReportPage extends StatelessWidget {
   final List<Map<String, dynamic>> answers;
 
@@ -217,7 +259,8 @@ class ReportPage extends StatelessWidget {
           final answer = answers[index];
           return ListTile(
             title: Text(answer['question']),
-            subtitle: Text('Tag: ${answer['tag']} - Score: ${answer['score']}'),
+            subtitle: Text(
+                'Tag: ${answer['tag']} - Score: ${answer['score']} - Emotion: ${answer['emotionResponse']}'),
           );
         },
       ),
