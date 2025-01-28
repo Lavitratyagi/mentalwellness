@@ -43,15 +43,12 @@ class ApiService {
     }
   }
 
-  static Future<String> uploadImage(File imageFile) async {
+  static Future<Map<String, dynamic>> uploadImage(File imageFile) async {
     final uri = Uri.parse('http://192.168.50.212:8080/emotion');
     final request = http.MultipartRequest('POST', uri);
 
     try {
-      // Get MIME type from file extension
-      final mimeType =
-          lookupMimeType(imageFile.path) ?? 'application/octet-stream';
-
+      final mimeType = lookupMimeType(imageFile.path) ?? 'application/octet-stream';
       request.files.add(
         await http.MultipartFile.fromPath(
           'file',
@@ -61,15 +58,32 @@ class ApiService {
       );
 
       final response = await request.send();
+      final responseString = await response.stream.bytesToString();
 
       if (response.statusCode == 200) {
-        return await response.stream.bytesToString();
+        return jsonDecode(responseString);
       } else {
-        final error = await response.stream.bytesToString();
-        throw Exception('Server error (${response.statusCode}): $error');
+        throw Exception('Server error (${response.statusCode}): $responseString');
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
+    }
+  }
+
+  static Future<void> submitAnswers(List<Map<String, dynamic>> answers) async {
+    print('Submitting answers: $answers');
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/answers'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(answers),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to submit answers: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Failed to submit answers: $e');
     }
   }
 }

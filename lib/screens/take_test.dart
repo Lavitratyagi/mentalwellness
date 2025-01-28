@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 import 'package:mentalwellness/services/api_services.dart';
 
 class TakeTestPage extends StatefulWidget {
@@ -14,7 +15,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
   Map<int, double> _answers = {};
   bool _isLoading = true;
   String _errorMessage = '';
-  Map<String, String> _emotionResponses = {}; // Store API responses for each question
+  Map<String, Map<String, dynamic>> _emotionResponses = {};
 
   @override
   void initState() {
@@ -29,7 +30,8 @@ class _TakeTestPageState extends State<TakeTestPage> {
 
       if (concerns.isEmpty) {
         setState(() {
-          _errorMessage = 'No concerns selected. Please complete previous steps.';
+          _errorMessage =
+              'No concerns selected. Please complete previous steps.';
           _isLoading = false;
         });
         return;
@@ -39,7 +41,6 @@ class _TakeTestPageState extends State<TakeTestPage> {
       setState(() {
         _questions = questions;
         _isLoading = false;
-        // Initialize answers with 0 values
         _answers = {for (var i = 0; i < _questions.length; i++) i: 0.0};
       });
     } catch (e) {
@@ -50,75 +51,60 @@ class _TakeTestPageState extends State<TakeTestPage> {
     }
   }
 
-  // Function to capture a photo using the front camera
   Future<File?> _captureImage() async {
     final picker = ImagePicker();
     try {
       final pickedFile = await picker.pickImage(
         source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front, // Use the front camera
+        preferredCameraDevice: CameraDevice.front,
       );
-
-      if (pickedFile != null) {
-        return File(pickedFile.path);
-      } else {
-        print('No image captured.');
-        return null;
-      }
+      return pickedFile != null ? File(pickedFile.path) : null;
     } catch (e) {
       print('Error capturing image: $e');
       return null;
     }
   }
 
-  // Function to handle slider value changes
-  void _handleSliderChange(int questionIndex, double value) async {
-    setState(() {
-      _answers[questionIndex] = value;
-    });
-
-    // Automatically capture an image when the slider value changes
+  void _handleImageUpload(int questionIndex) async {
     final imageFile = await _captureImage();
     if (imageFile != null) {
       try {
-        // Send the image to the backend
         final response = await ApiService.uploadImage(imageFile);
         setState(() {
-          _emotionResponses[_questions[questionIndex]] = response.toString();
+          // Extract the nested emotions data from the response
+          _emotionResponses[_questions[questionIndex]] = response['emotions'];
         });
-        print('API Response: $response');
       } catch (e) {
         print('Error sending image to backend: $e');
       }
     }
   }
 
-  void _submitAnswers() {
-    // Process answers and tags
+  void _submitAnswers() async {
     final List<Map<String, dynamic>> formattedAnswers = [];
 
     for (int i = 0; i < _questions.length; i++) {
-      final question = _questions[i];
-      final match = RegExp(r'\[(.*?)\]').firstMatch(question);
-      final tag = match?.group(1) ?? 'general';
-      final questionText = question.replaceAll(RegExp(r'\[.*?\]\s*'), '');
-
       formattedAnswers.add({
-        'tag': tag,
-        'question': questionText,
-        'score': _answers[i]?.toInt() ?? 0,
-        'emotionResponse': _emotionResponses[question] ?? 'Not Available',
+        'answer': _questions[i],
+        'scale': _answers[i]?.toInt() ?? 0,
+        // Directly use the emotions map without nesting
+        'emotions': _emotionResponses[_questions[i]] ?? {},
       });
     }
 
-    // TODO: Send formattedAnswers to backend
-    print('Submitting answers: $formattedAnswers');
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => ReportPage(answers: formattedAnswers),
-      ),
-    );
+    try {
+      await ApiService.submitAnswers(formattedAnswers);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ReportPage(answers: formattedAnswers),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to submit answers: $e')),
+      );
+    }
   }
 
   @override
@@ -138,11 +124,8 @@ class _TakeTestPageState extends State<TakeTestPage> {
               : SingleChildScrollView(
                   padding: EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Instructions Block
                       Container(
-                        width: double.infinity,
                         padding: EdgeInsets.all(16),
                         decoration: BoxDecoration(
                           color: Colors.grey[200],
@@ -159,26 +142,20 @@ class _TakeTestPageState extends State<TakeTestPage> {
                                 )),
                             SizedBox(height: 10),
                             Text(
-                              '1. Using the 0-3 scale below, please indicate how you feel about the particular condition or experience.\n'
-                              '2. Please answer according to what really reflects your experience rather than what you think your experience should be.\n'
-                              '3. Please treat each item separately from every other item.',
+                              '1. Using the 0-3 scale below...\n'
+                              '2. Please answer according to...\n'
+                              '3. Please treat each item separately...',
                               style: TextStyle(fontSize: 16),
                             ),
                           ],
                         ),
                       ),
                       SizedBox(height: 20),
-
-                      // Questions List
                       ListView.builder(
                         shrinkWrap: true,
                         physics: NeverScrollableScrollPhysics(),
                         itemCount: _questions.length,
                         itemBuilder: (context, index) {
-                          final question = _questions[index];
-                          final displayQuestion = question.replaceAll(
-                              RegExp(r'\[.*?\]\s*'), '');
-
                           return Card(
                             margin: EdgeInsets.symmetric(vertical: 8),
                             child: Padding(
@@ -186,11 +163,13 @@ class _TakeTestPageState extends State<TakeTestPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(displayQuestion,
-                                      style: TextStyle(
+                                  Text(
+                                    _questions[index]
+                                        .replaceAll(RegExp(r'\[.*?\]\s*'), ''),
+                                    style: TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.w500,
-                                      )),
+                                        fontWeight: FontWeight.w500),
+                                  ),
                                   SizedBox(height: 10),
                                   Slider.adaptive(
                                     value: _answers[index] ?? 0.0,
@@ -199,7 +178,9 @@ class _TakeTestPageState extends State<TakeTestPage> {
                                     divisions: 3,
                                     label: _answers[index]?.toStringAsFixed(0),
                                     onChanged: (value) =>
-                                        _handleSliderChange(index, value),
+                                        setState(() => _answers[index] = value),
+                                    onChangeEnd: (value) =>
+                                        _handleImageUpload(index),
                                   ),
                                   Row(
                                     mainAxisAlignment:
@@ -215,25 +196,22 @@ class _TakeTestPageState extends State<TakeTestPage> {
                         },
                       ),
                       SizedBox(height: 20),
-                      Center(
-                        child: ElevatedButton(
-                          onPressed: _submitAnswers,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xff8C7CE3),
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 40, vertical: 15),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
+                      ElevatedButton(
+                        onPressed: _submitAnswers,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xff8C7CE3),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 40, vertical: 15),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
                           ),
-                          child: Text(
-                            'Generate Report',
-                            style: TextStyle(
+                        ),
+                        child: Text(
+                          'Generate Report',
+                          style: TextStyle(
                               fontSize: 18,
                               color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -243,7 +221,6 @@ class _TakeTestPageState extends State<TakeTestPage> {
   }
 }
 
-// Dummy Report Page
 class ReportPage extends StatelessWidget {
   final List<Map<String, dynamic>> answers;
 
@@ -258,9 +235,14 @@ class ReportPage extends StatelessWidget {
         itemBuilder: (context, index) {
           final answer = answers[index];
           return ListTile(
-            title: Text(answer['question']),
-            subtitle: Text(
-                'Tag: ${answer['tag']} - Score: ${answer['score']} - Emotion: ${answer['emotionResponse']}'),
+            title: Text(answer['answer']),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Scale: ${answer['scale']}'),
+                Text('Emotion: ${answer['emotion']}'),
+              ],
+            ),
           );
         },
       ),
