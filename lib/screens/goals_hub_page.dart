@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mentalwellness/screens/goal_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,12 +13,21 @@ class GoalsHubPage extends StatefulWidget {
 
 class _GoalsHubPageState extends State<GoalsHubPage> {
   int _waterCount = 0;
+  String _todayKey = _getTodayKey();
   final List<Map<String, dynamic>> _goals = [
     {'task': 'Eat 3 meals', 'icon': Icons.restaurant, 'progress': 0.7},
-    {'task': 'Meditate for 5 min', 'icon': Icons.self_improvement, 'progress': 0.4},
+    {
+      'task': 'Meditate for 5 min',
+      'icon': Icons.self_improvement,
+      'progress': 0.4
+    },
     {'task': 'Skincare', 'icon': Icons.spa, 'progress': 0.5},
     {'task': 'Read a book', 'icon': Icons.menu_book, 'progress': 0.3},
-    {'task': 'Exercise for 30 min', 'icon': Icons.directions_run, 'progress': 0.6},
+    {
+      'task': 'Exercise for 30 min',
+      'icon': Icons.directions_run,
+      'progress': 0.6
+    },
     {'task': 'Sleep by 11pm', 'icon': Icons.nights_stay, 'progress': 0.8},
   ];
 
@@ -26,10 +37,18 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
     _loadWaterCount();
   }
 
+  static String _getTodayKey() {
+    final now = DateTime.now();
+    return '${now.year}-${now.month}-${now.day}'; // Format: YYYY-MM-DD
+  }
+
   void _loadWaterCount() async {
     final prefs = await SharedPreferences.getInstance();
+    final savedData = prefs.getString('waterIntake') ?? '{}';
+    final waterData = json.decode(savedData) as Map<String, dynamic>;
+
     setState(() {
-      _waterCount = prefs.getInt('waterCount') ?? 0;
+      _waterCount = waterData[_todayKey]?.toInt() ?? 0;
     });
   }
 
@@ -90,7 +109,7 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
       context,
       MaterialPageRoute(
         builder: (context) => GoalsPage(
-          taskName: goal['task'],      // Pass task name
+          taskName: goal['task'], // Pass task name
           progress: goal['progress'], // Pass progress
         ),
       ),
@@ -102,6 +121,7 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text('Goals Hub')),
+        automaticallyImplyLeading: false,
       ),
       body: Column(
         children: [
@@ -202,7 +222,8 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     ),
                     icon: Icon(Icons.add, color: Colors.white),
                     label: Text(

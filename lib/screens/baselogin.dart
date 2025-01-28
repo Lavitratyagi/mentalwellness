@@ -30,7 +30,8 @@ class LoginSignupPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => UsernamePasswordPage(isSignup: false),
+                        builder: (context) =>
+                            UsernamePasswordPage(isSignup: false),
                       ),
                     );
                   },
@@ -43,7 +44,7 @@ class LoginSignupPage extends StatelessWidget {
                   ),
                   child: Text(
                     'Login',
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18, color: Colors.white),
                   ),
                 ),
                 SizedBox(width: 20), // Space between buttons
@@ -55,7 +56,8 @@ class LoginSignupPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => UsernamePasswordPage(isSignup: true),
+                        builder: (context) =>
+                            UsernamePasswordPage(isSignup: true),
                       ),
                     );
                   },
@@ -68,7 +70,7 @@ class LoginSignupPage extends StatelessWidget {
                   ),
                   child: Text(
                     'Sign Up',
-                    style: TextStyle(fontSize: 18),
+                    style: TextStyle(fontSize: 18,color: Colors.black),
                   ),
                 ),
               ],

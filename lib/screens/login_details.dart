@@ -79,8 +79,8 @@ class _UsernamePasswordPageState extends State<UsernamePasswordPage> {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(
-                    "assets/images/bg.png"), // Same background image
+                image:
+                    AssetImage("assets/images/bg.png"), // Same background image
                 fit: BoxFit.cover,
               ),
             ),
@@ -95,32 +95,58 @@ class _UsernamePasswordPageState extends State<UsernamePasswordPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   // Username Field
+                  // Username Field
                   TextField(
                     controller: _usernameController,
                     decoration: InputDecoration(
-                      hintText: "Enter Username",
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      labelText:
+                          "Username", // Move the text above the TextField
+                      labelStyle:
+                          TextStyle(color: Colors.white), // White label text
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors.white), // White bottom line
                       ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors
+                                .blueAccent), // Blue bottom line when focused
+                      ),
+                      hintText: "Enter your username",
+                      hintStyle: TextStyle(
+                          color: Colors.white70), // Slightly dimmed hint text
                     ),
+                    style: TextStyle(
+                        color: Colors.white), // White text for user input
                   ),
                   SizedBox(height: 20),
 
-                  // Password Field
+// Password Field
                   TextField(
                     controller: _passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      hintText: "Enter Password",
-                      filled: true,
-                      fillColor: Colors.white.withOpacity(0.8),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      labelText:
+                          "Password", // Move the text above the TextField
+                      labelStyle:
+                          TextStyle(color: Colors.white), // White label text
+                      enabledBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors.white), // White bottom line
                       ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors
+                                .blueAccent), // Blue bottom line when focused
+                      ),
+                      hintText: "Enter your password",
+                      hintStyle: TextStyle(
+                          color: Colors.white70), // Slightly dimmed hint text
                     ),
+                    style: TextStyle(
+                        color: Colors.white), // White text for user input
                   ),
+
                   SizedBox(height: 30),
 
                   // Next Step Button
@@ -135,7 +161,7 @@ class _UsernamePasswordPageState extends State<UsernamePasswordPage> {
                     ),
                     child: Text(
                       widget.isSignup ? "Sign Up" : "Login",
-                      style: TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: 18, color: Colors.white),
                     ),
                   ),
                 ],
