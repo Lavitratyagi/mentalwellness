@@ -120,7 +120,15 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Center(child: Text('Goals Hub')),
+        title: const Center(
+          child: Text(
+            'Goals Hub',
+            style: TextStyle(
+              fontWeight: FontWeight.bold, // Makes the text bold
+              fontSize: 20, // Optional: Adjust font size
+            ),
+          ),
+        ),
         automaticallyImplyLeading: false,
       ),
       body: Column(
@@ -129,52 +137,55 @@ class _GoalsHubPageState extends State<GoalsHubPage> {
           Card(
             color: Colors.lightBlue[50],
             margin: EdgeInsets.all(16),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(Icons.local_drink, color: Colors.blue[800]),
-                      SizedBox(width: 8),
-                      Text(
-                        'Daily Water Intake',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+            child: SizedBox(
+              height: 120, // Set a fixed height for the Card
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.local_drink, color: Colors.blue[800]),
+                        SizedBox(width: 8),
+                        Text(
+                          'Daily Water Intake',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue[800],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Wrap(
-                          spacing: 8,
-                          children: List.generate(8, (index) {
-                            return Container(
-                              width: 22,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                color: index < _waterCount
-                                    ? Colors.blue[800]
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(color: Colors.blue[100]!),
-                              ),
-                            );
-                          }),
+                      ],
+                    ),
+                    SizedBox(height: 16), // Increased spacing
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Wrap(
+                            spacing: 8,
+                            children: List.generate(8, (index) {
+                              return Container(
+                                width: 22,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: index < _waterCount
+                                      ? Colors.blue[800]
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: Colors.blue[100]!),
+                                ),
+                              );
+                            }),
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add_circle, color: Colors.blue[800]),
-                        onPressed: () => _updateWaterCount(_waterCount + 1),
-                      ),
-                    ],
-                  ),
-                ],
+                        IconButton(
+                          icon: Icon(Icons.add_circle, color: Colors.blue[800]),
+                          onPressed: () => _updateWaterCount(_waterCount + 1),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

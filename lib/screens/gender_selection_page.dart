@@ -17,7 +17,7 @@ class _GenderSelectionPageState extends State<GenderSelectionPage> {
   ];
 
   void _nextPage() {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => MainConcernsPage()),
     );

@@ -7,29 +7,27 @@ class MainConcernsPage extends StatefulWidget {
 }
 
 class _MainConcernsPageState extends State<MainConcernsPage> {
-  // List to hold the selected concerns
   List<String> _selectedConcerns = [];
 
-  // Function to handle next page navigation
   void _nextPage() {
     if (_selectedConcerns.isEmpty) {
-      // Show a message if no concerns are selected
       _showMessage("Please select at least one concern.");
     } else {
-      // Navigate to the next page (replace with your actual next page)
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => RecommendationsPage(), // Replace with your actual next page
+          builder: (context) => RecommendationsPage(),
         ),
       );
     }
   }
 
-  // Function to show a message
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
+      ),
     );
   }
 
@@ -42,7 +40,7 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
           Container(
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage("assets/images/bg.png"), // Use your background image here
+                image: AssetImage("assets/images/bg.png"),
                 fit: BoxFit.cover,
               ),
             ),
@@ -56,18 +54,18 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Text for Main Concerns
+                  // Dynamic Label
                   Text(
-                    "DEFINE YOUR 3 MAIN CONCERNS",
+                    "DEFINE YOUR ${_selectedConcerns.length < 3 ? 3 - _selectedConcerns.length : 0} MAIN CONCERNS",
                     style: TextStyle(
                       fontSize: 24,
-                      color: Colors.white, // White color to stand out
+                      color: Colors.white,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 30),
 
-                  // Concerns Checkboxes (using GestureDetector for custom style)
+                  // Concern Options
                   Wrap(
                     spacing: 8,
                     runSpacing: 15,
@@ -88,8 +86,10 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
                           setState(() {
                             if (isSelected) {
                               _selectedConcerns.remove(concern);
-                            } else {
+                            } else if (_selectedConcerns.length < 3) {
                               _selectedConcerns.add(concern);
+                            } else {
+                              _showMessage("You can select up to 3 concerns only.");
                             }
                           });
                         },
@@ -99,7 +99,8 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: isSelected ? Colors.white : Colors.transparent,
+                            color:
+                                isSelected ? Colors.white : Colors.transparent,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                               color: isSelected
@@ -125,27 +126,53 @@ class _MainConcernsPageState extends State<MainConcernsPage> {
 
                   SizedBox(height: 40),
 
-                  // Next Step Button
-                  ElevatedButton(
-                    onPressed: _nextPage,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xff8C7CE3),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 30,
-                        vertical: 15,
+                  // Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 30,
+                            vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: Text(
+                          "PREVIOUS",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xff8C7CE3),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                      ElevatedButton(
+                        onPressed: _nextPage,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xff8C7CE3),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 30,
+                            vertical: 15,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                        ),
+                        child: Text(
+                          "NEXT STEP",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
-                    ),
-                    child: Text(
-                      "NEXT STEP",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    ],
                   ),
                 ],
               ),
