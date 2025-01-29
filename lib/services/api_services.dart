@@ -63,14 +63,16 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(responseString);
       } else {
-        throw Exception('Server error (${response.statusCode}): $responseString');
+        throw Exception(
+            'Server error (${response.statusCode}): $responseString');
       }
     } catch (e) {
       throw Exception('Network error: ${e.toString()}');
     }
   }
 
-  static Future<void> submitAnswers(List<Map<String, dynamic>> answers) async {
+  static Future<dynamic> submitAnswers(
+      List<Map<String, dynamic>> answers) async {
     print('Submitting answers: $answers');
     try {
       final response = await http.post(
@@ -79,11 +81,36 @@ class ApiService {
         body: jsonEncode(answers),
       );
 
-      if (response.statusCode != 200) {
-        throw Exception('Failed to submit answers: ${response.body}');
+      final responseData = jsonDecode(response.body);
+      print("Response: $responseData");
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        throw Exception(
+            'Failed to submit answers: ${responseData['message'] ?? response.body}');
       }
     } catch (e) {
-      throw Exception('Failed to submit answers: $e');
+      throw Exception('Failed to submit answers: ${e.toString()}');
+    }
+  }
+
+  static Future<String> chatWithCompanion(String query) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$_baseUrl/chat/${Uri.encodeComponent(query)}'),
+        // Removed incorrect Content-Type header since it's a GET request
+      );
+      print('Raw response: ${response.body}');
+
+      if (response.statusCode == 200) {
+        // Directly return the response body as it's already a string
+        return response.body;
+      } else {
+        return 'Error: ${response.statusCode} - ${response.reasonPhrase}';
+      }
+    } catch (e) {
+      return 'Error connecting to the server: $e';
     }
   }
 }

@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:mentalwellness/screens/report_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:mentalwellness/services/api_services.dart';
 
 class TakeTestPage extends StatefulWidget {
@@ -87,17 +87,18 @@ class _TakeTestPageState extends State<TakeTestPage> {
       formattedAnswers.add({
         'answer': _questions[i],
         'scale': _answers[i]?.toInt() ?? 0,
-        // Directly use the emotions map without nesting
-        'emotions': _emotionResponses[_questions[i]] ?? {},
+        'emotion': _emotionResponses[_questions[i]] ?? {},
       });
     }
 
     try {
-      await ApiService.submitAnswers(formattedAnswers);
+      // Get server response
+      final serverResponse = await ApiService.submitAnswers(formattedAnswers);
+
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => ReportPage(answers: formattedAnswers),
+          builder: (context) => ReportPage(serverData: serverResponse),
         ),
       );
     } catch (e) {
@@ -217,35 +218,6 @@ class _TakeTestPageState extends State<TakeTestPage> {
                     ],
                   ),
                 ),
-    );
-  }
-}
-
-class ReportPage extends StatelessWidget {
-  final List<Map<String, dynamic>> answers;
-
-  const ReportPage({required this.answers});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Your Report')),
-      body: ListView.builder(
-        itemCount: answers.length,
-        itemBuilder: (context, index) {
-          final answer = answers[index];
-          return ListTile(
-            title: Text(answer['answer']),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Scale: ${answer['scale']}'),
-                Text('Emotion: ${answer['emotion']}'),
-              ],
-            ),
-          );
-        },
-      ),
     );
   }
 }

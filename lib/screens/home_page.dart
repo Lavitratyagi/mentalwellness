@@ -10,39 +10,26 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  bool _isDailySelected = true;
-  int _waterCount = 0;
-  String _todayKey = _getTodayKey();
+  bool _isDailySelected = true; // Toggle for "Daily Tasks" and "Challenges"
+  int _waterCount = 0; // Water intake count
+  String _todayKey = _getTodayKey(); // Key for today's data
+  List<Map<String, dynamic>> _dailyTasks = []; // List of daily tasks
 
-  final List<Map<String, dynamic>> _dailyTasks = [
-    {'task': 'Eat 3 meals', 'icon': Icons.restaurant, 'completed': false},
-    {
-      'task': 'Meditate for 5 min',
-      'icon': Icons.self_improvement,
-      'completed': false
-    },
-    {'task': 'Skincare', 'icon': Icons.spa, 'completed': false},
-    {'task': 'Read a book', 'icon': Icons.menu_book, 'completed': false},
-    {
-      'task': 'Exercise for 30 min',
-      'icon': Icons.directions_run,
-      'completed': false
-    },
-    {'task': 'Sleep by 11pm', 'icon': Icons.nights_stay, 'completed': false},
-  ];
-
+  // Generate today's key in the format YYYY-MM-DD
   static String _getTodayKey() {
     final now = DateTime.now();
-    return '${now.year}-${now.month}-${now.day}'; // Format: YYYY-MM-DD
+    return '${now.year}-${now.month}-${now.day}';
   }
 
   @override
   void initState() {
     super.initState();
     _loadWaterCount();
+    _loadDailyTasks();
   }
 
-  void _loadWaterCount() async {
+  // Load water intake count for today
+  Future<void> _loadWaterCount() async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getString('waterIntake') ?? '{}';
     final waterData = json.decode(savedData) as Map<String, dynamic>;
@@ -52,19 +39,60 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // Load daily tasks from SharedPreferences
+  Future<void> _loadDailyTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedTasks = prefs.getString('dailyTasks');
+
+    if (savedTasks != null) {
+      setState(() {
+        _dailyTasks = List<Map<String, dynamic>>.from(json.decode(savedTasks));
+      });
+    } else {
+      await _initializeDefaultTasks();
+    }
+  }
+
+  // Initialize default tasks if no saved tasks are found
+  Future<void> _initializeDefaultTasks() async {
+    _dailyTasks = [
+      {'task': 'Eat 3 meals', 'completed': false},
+      {'task': 'Meditate for 5 min', 'completed': false},
+      {'task': 'Skincare', 'completed': false},
+      {'task': 'Read a book', 'completed': false},
+      {'task': 'Exercise for 30 min', 'completed': false},
+      {'task': 'Sleep by 11pm', 'completed': false},
+    ];
+    await _saveDailyTasks();
+  }
+
+  // Save daily tasks to SharedPreferences
+  Future<void> _saveDailyTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('dailyTasks', json.encode(_dailyTasks));
+  }
+
+  // Update water count and save it to SharedPreferences
   void _updateWaterCount(int count) async {
     final prefs = await SharedPreferences.getInstance();
     final savedData = prefs.getString('waterIntake') ?? '{}';
     final waterData = json.decode(savedData) as Map<String, dynamic>;
 
-    waterData[_todayKey] =
-        count.clamp(0, 8); // Ensure value stays between 0 and 8
+    waterData[_todayKey] = count.clamp(0, 8); // Ensure count is between 0 and 8
 
     setState(() {
       _waterCount = waterData[_todayKey];
     });
 
     await prefs.setString('waterIntake', json.encode(waterData));
+  }
+
+  // Toggle task completion status
+  void _toggleTaskCompletion(int index) {
+    setState(() {
+      _dailyTasks[index]['completed'] = !_dailyTasks[index]['completed'];
+    });
+    _saveDailyTasks();
   }
 
   @override
@@ -83,39 +111,80 @@ class _HomePageState extends State<HomePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: avatarHeight * 0.5, // Maintain 3:4 aspect ratio
+                  width: avatarHeight * 0.5,
                   height: avatarHeight,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    image: DecorationImage(
+                    image: const DecorationImage(
                       image: AssetImage('assets/images/avatar.png'),
                       fit: BoxFit.fitHeight,
                     ),
                   ),
                 ),
-                SizedBox(width: 16),
-                Container(
-                  height: avatarHeight,
+                const SizedBox(width: 16),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
+                      const Text(
                         'Eve',
                         style: TextStyle(
-                            fontSize: 24, fontWeight: FontWeight.bold),
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      SizedBox(height: 8),
-                      Text('Weight: 58 kg',
-                          style: TextStyle(color: Colors.grey)),
-                      Text('Height: 165 cm',
-                          style: TextStyle(color: Colors.grey)),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Weight: 58 kg',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const Text(
+                        'Height: 165 cm',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(
+                          height:
+                              16), // Add extra space between height and tasks
+                      // Daily Tasks with LVL 1 Section
+                      Padding(
+                        padding: const EdgeInsets.only(
+                            top: 8), // Add padding at the top
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _dailyTasks
+                              .map(
+                                (task) => Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        task['task'],
+                                        style: const TextStyle(fontSize: 16),
+                                      ),
+                                      const Text(
+                                        'LVL 1',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.purple,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 24),
+            const SizedBox(height: 24),
 
             // Buttons Section
             Row(
@@ -142,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                     ),
                   ),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
@@ -224,47 +293,33 @@ class _HomePageState extends State<HomePage> {
                         ),
 
                         // Daily Tasks Section
-                        ..._dailyTasks.map((task) {
-                          int index = _dailyTasks.indexOf(task);
+                        ..._dailyTasks.asMap().entries.map((entry) {
+                          int index = entry.key;
+                          Map<String, dynamic> task = entry.value;
                           return Card(
-                            margin: EdgeInsets.symmetric(vertical: 8),
-                            child: SizedBox(
-                              height: 80, // Adjust the height as needed
-                              child: ListTile(
-                                contentPadding: EdgeInsets.symmetric(
-                                  horizontal: 16, // Horizontal padding
-                                  vertical:
-                                      12, // Adjust vertical padding for height
-                                ),
-                                leading: Icon(
-                                  task['icon'],
-                                  color: Colors.purple,
-                                  size: 30, // Adjust icon size if needed
-                                ),
-                                title: Text(
-                                  task['task'],
-                                  style: TextStyle(
-                                      fontSize:
-                                          16), // Adjust font size if needed
-                                ),
-                                trailing: Checkbox(
-                                  value: task['completed'],
-                                  onChanged: (bool? value) {
-                                    setState(() {
-                                      _dailyTasks[index]['completed'] = value!;
-                                    });
-                                  },
-                                  materialTapTargetSize:
-                                      MaterialTapTargetSize.padded,
-                                  visualDensity: VisualDensity.compact,
-                                ),
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: const Icon(
+                                Icons.star,
+                                color: Colors.purple,
+                                size: 30,
+                              ),
+                              title: Text(
+                                task['task'],
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              trailing: Checkbox(
+                                value: task['completed'],
+                                onChanged: (bool? value) {
+                                  _toggleTaskCompletion(index);
+                                },
                               ),
                             ),
                           );
                         }).toList(),
                       ],
                     )
-                  : Center(
+                  : const Center(
                       child: Text(
                         'No challenges available',
                         style: TextStyle(color: Colors.grey),

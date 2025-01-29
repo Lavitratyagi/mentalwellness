@@ -15,7 +15,6 @@ class _FloatingNavBarHomeState extends State<FloatingNavBarHome> {
   final List<Widget> _pages = [
     const GoalsHubPage(),
     const HomePage(), // Your existing HomePage
-    const Center(child: Text('Tasks Page', style: TextStyle(fontSize: 24))),
     const SafeSpacePage(),
   ];
 
@@ -30,7 +29,6 @@ class _FloatingNavBarHomeState extends State<FloatingNavBarHome> {
     final List<IconData> icons = [
       Icons.flag, // Goals
       Icons.home, // Home
-      Icons.check_circle, // Tasks
       Icons.handshake, // Friends
     ];
 
