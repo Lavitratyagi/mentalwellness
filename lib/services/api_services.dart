@@ -44,23 +44,29 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> uploadImage(File imageFile) async {
-    final uri = Uri.parse('http://192.168.50.212:8080/emotion');
+    final uri = Uri.parse('http://192.168.50.212:8080/emotion'); // Update the URL as needed
     final request = http.MultipartRequest('POST', uri);
 
     try {
+      // Get the MIME type of the image
       final mimeType = lookupMimeType(imageFile.path) ?? 'application/octet-stream';
+      
+      // Add the image file to the request
       request.files.add(
         await http.MultipartFile.fromPath(
-          'file',
+          'file', // This should match the backend's expected parameter name
           imageFile.path,
           contentType: MediaType.parse(mimeType),
         ),
       );
 
+      // Send the request and wait for the server response
       final response = await request.send();
       final responseString = await response.stream.bytesToString();
 
+      // Handle the response based on status code
       if (response.statusCode == 200) {
+        // Parse the response if it's successful
         return jsonDecode(responseString);
       } else {
         throw Exception(

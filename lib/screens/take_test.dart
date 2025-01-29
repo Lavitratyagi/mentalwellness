@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:mentalwellness/screens/report_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mentalwellness/services/api_services.dart';
+import 'package:camera/camera.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class TakeTestPage extends StatefulWidget {
   @override
@@ -16,13 +17,53 @@ class _TakeTestPageState extends State<TakeTestPage> {
   bool _isLoading = true;
   String _errorMessage = '';
   Map<String, Map<String, dynamic>> _emotionResponses = {};
+  CameraController? _cameraController;
+  List<CameraDescription>? _cameras;
+  int _selectedCameraIdx = 0;
 
   @override
   void initState() {
     super.initState();
     _fetchQuestions();
+    _initializeCamera();
   }
 
+  // Initialize camera
+  Future<void> _initializeCamera() async {
+    try {
+      // Request camera permission (if not already granted)
+      final cameraPermission = await Permission.camera.request();
+      if (!cameraPermission.isGranted) {
+        print("Camera permission not granted");
+        return; // Exit if permission is not granted
+      }
+
+      // Initialize the available cameras
+      _cameras = await availableCameras();
+
+      // Check if there are available cameras
+      if (_cameras == null || _cameras!.isEmpty) {
+        print("No cameras available");
+        return; // Exit if no cameras are available
+      }
+
+      // Initialize camera controller with the first available camera
+      _cameraController = CameraController(
+        _cameras![0],
+        ResolutionPreset.high,
+      );
+
+      // Wait for the camera to initialize
+      await _cameraController!.initialize();
+      setState(() {}); // Rebuild to ensure UI reflects camera initialization
+
+      print("Camera initialized successfully");
+    } catch (e) {
+      print('Error initializing camera: $e');
+    }
+  }
+
+  // Fetch questions from the API
   Future<void> _fetchQuestions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -51,20 +92,27 @@ class _TakeTestPageState extends State<TakeTestPage> {
     }
   }
 
+  // Capture image using the camera
   Future<File?> _captureImage() async {
-    final picker = ImagePicker();
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      print("Camera not initialized or controller is null");
+      return null; // Return null if the camera is not initialized
+    }
+
     try {
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.camera,
-        preferredCameraDevice: CameraDevice.front,
-      );
-      return pickedFile != null ? File(pickedFile.path) : null;
+      // Capture the image and get the XFile
+      final XFile file = await _cameraController!.takePicture();
+
+      // Get the file path from XFile and return it as a File object
+      print("Image captured: ${file.path}");
+      return File(file.path);
     } catch (e) {
       print('Error capturing image: $e');
       return null;
     }
   }
 
+  // Handle image upload to the server
   void _handleImageUpload(int questionIndex) async {
     final imageFile = await _captureImage();
     if (imageFile != null) {
@@ -80,6 +128,7 @@ class _TakeTestPageState extends State<TakeTestPage> {
     }
   }
 
+  // Submit answers to the server
   void _submitAnswers() async {
     final List<Map<String, dynamic>> formattedAnswers = [];
 
@@ -106,6 +155,12 @@ class _TakeTestPageState extends State<TakeTestPage> {
         SnackBar(content: Text('Failed to submit answers: $e')),
       );
     }
+  }
+
+  @override
+  void dispose() {
+    _cameraController?.dispose();
+    super.dispose();
   }
 
   @override
@@ -178,10 +233,13 @@ class _TakeTestPageState extends State<TakeTestPage> {
                                     max: 3,
                                     divisions: 3,
                                     label: _answers[index]?.toStringAsFixed(0),
-                                    onChanged: (value) =>
-                                        setState(() => _answers[index] = value),
-                                    onChangeEnd: (value) =>
-                                        _handleImageUpload(index),
+                                    onChanged: (value) {
+                                      setState(() {
+                                        _answers[index] = value;
+                                      });
+                                      // Directly handle the image upload as slider value changes
+                                      _handleImageUpload(index);
+                                    },
                                   ),
                                   Row(
                                     mainAxisAlignment:
