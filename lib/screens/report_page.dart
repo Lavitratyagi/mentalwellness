@@ -19,7 +19,11 @@ class ReportPage extends StatelessWidget {
     return 'Great';
   }
 
-  Widget _buildParameterRow(String parameter, int value) {
+  Widget _buildParameterRow(String parameter, int value, String? interpretation) {
+    if (interpretation == null) {
+      return SizedBox.shrink();  // If interpretation is null, return an empty widget
+    }
+
     double progressValue = (value + 1) / 4.0; // Convert to 0-1 range
     Color progressColor = _getProgressColor(progressValue);
 
@@ -62,6 +66,7 @@ class ReportPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final parameters = serverData['parameters'] as Map<String, dynamic>;
+    final interpretation = serverData['interpretation'] as Map<String, dynamic>;
     final emotion = serverData['emotion'] ?? 'Unknown';
 
     return Scaffold(
@@ -116,10 +121,18 @@ class ReportPage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 16),
-            ...parameters.entries.map((entry) => _buildParameterRow(
-                  entry.key,
-                  (entry.value as num).toInt(),
-                )),
+            ...parameters.entries.map((entry) {
+              final paramKey = entry.key;
+              final paramValue = entry.value;
+              final paramInterpretation = interpretation[paramKey];
+
+              // Check if the value is not null before proceeding
+              if (paramValue == null) {
+                return SizedBox.shrink(); // Skip if value is null
+              }
+
+              return _buildParameterRow(paramKey, (paramValue as num).toInt(), paramInterpretation);
+            }).toList(),
           ],
         ),
       ),
